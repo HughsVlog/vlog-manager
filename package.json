@@ -1,0 +1,13 @@
+{
+  "name": "vlog-manager",
+  "version": "0.0.0",
+  "description": "Easily generate project files for daily vlogs",
+  "main": "new-episode.js",
+  "author": "Hugh Guiney",
+  "license": "UNLICENSED",
+  "private": true,
+  "repository": "https://github.com/HughsVlog/vlog-manager.git",
+  "dependencies": {
+    "recursive-copy": "^2.0.10"
+  }
+}

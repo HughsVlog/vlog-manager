@@ -1,0 +1,27 @@
+# Ignore everything
+*
+
+# But not these
+!.gitignore
+!new-episode.js
+!package.json
+!README*
+
+!Graphics/
+!Interstitials/
+!Live Streams/
+!Logo/
+!Memories/
+!Music/
+!Recordings/
+!Referenced Works/
+!Sound FX/
+
+!Templates/*
+Templates/*.prproj
+Templates/Adobe Premiere Pro Auto-Save/
+Templates/Credits Sequence*
+
+!Theme/
+!Unorganized/
+!Visual FX/
