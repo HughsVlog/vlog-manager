@@ -18,7 +18,9 @@ Create a file `vlog-manager.json` at the root of the directory. This file holds 
   "templateDirectory": "Templates/",
   "descriptionTargetDirectory": "Export/",
   "defaultTemplate": "Season 3.1 Episode.prproj",
-  "seasonPrefix": "Season "
+  "seasonPrefix": "Season ",
+  "imageEditingTargetDirectory": "Project/Photoshop/",
+  "videoEditingTargetDirectory": "Project/Premiere/"
 }
 ```
 
@@ -148,6 +150,20 @@ The file `Templates/description.md` will be copied to `Export/description.md`, a
     <td>How season folders should be named. Prepended to season number.</td>
     <td>Text</td>
     <td><code>Season </code> (with trailing space)</td>
+  </tr>
+  <tr>
+    <td><code>imageEditingTargetDirectory</code></td>
+    <td></td>
+    <td>Where to store project files related to image editing, such as <code>.psd</code> and <code>.xcf</code>.</td>
+    <td>Path</td>
+    <td><code>Project/Photoshop/</code></td>
+  </tr>
+  <tr>
+    <td><code>videoEditingTargetDirectory</code></td>
+    <td></td>
+    <td>Where to store project files related to video editing, such as <code>.prproj</code> and <code>.fcpx</code>.</td>
+    <td>Path</td>
+    <td><code>Project/Premiere/</code></td>
   </tr>
 </tbody>
 </table>
