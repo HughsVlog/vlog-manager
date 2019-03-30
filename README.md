@@ -54,16 +54,14 @@ The file `Templates/description.md` will be copied to `Export/description.md`, a
     <td></td>
   </tr>
   <tr>
-    <td><code>-d</code></td>
-    <td><code>--date</code></td>
-    <td>Yes</td>
-    <td>Date of recording</td>
-    <td>    
-      <ul>
-        <li>ISO 8601 date without a time component, e.g. 2019-01-01</li>
-        <li>A relative day keyword: <code>today</code> or <code>yesterday</code></li>
-      </ul>
-    </td>
+    <td rowspan="2"><code>-d</code></td>
+    <td rowspan="2"><code>--date</code></td>
+    <td rowspan="2">Yes</td>
+    <td rowspan="2">Date of recording</td>
+    <td>ISO 8601 date</td>
+  </tr>
+  <tr>
+    <td><code>today</code> or <code>yesterday</td>
   </tr>
   <tr>
     <td><code>-t</code></td>
@@ -76,7 +74,7 @@ The file `Templates/description.md` will be copied to `Export/description.md`, a
     <td><code>-s</code></td>
     <td><code>--season</code></td>
     <td></td>
-    <td>Season number. Corresponds to target directory. Defaults to latest Season <var>X</var> directory.</td>
+    <td>Season number. Corresponds to target directory.<br />Defaults to latest Season <var>X</var> directory.</td>
     <td>Number</td>
   </tr>
   <tr>
