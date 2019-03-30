@@ -1,5 +1,6 @@
 const fs = require( 'fs' );
 const copy = require( 'recursive-copy' );
+const path = require( 'path' );
 
 const help = `Vlog Manager v0.0.0
   by Hugh Guiney
@@ -19,12 +20,14 @@ Arguments:
   -e | --episode\tEpisode number. For use in description.md.
 `;
 
+let episodeDirectory;
+
 // https://stackoverflow.com/a/2998822/214325
 function pad( number, size = 2 ) {
   let string = number.toString();
 
   while ( string.length < size ) {
-    string = '0' + string;
+    string = `0${string}`;
   }
 
   return string;
@@ -55,15 +58,18 @@ function attempt( command, errorType ) {
 function getConfig() {
   return attempt(
     () => JSON.parse( fs.readFileSync( './vlog-manager.json', 'utf8' ) ),
-    'Error reading vlog-manager.json'
+    'Error reading vlog-manager.json',
   );
 }
+const config = getConfig();
+const seasonPattern = new RegExp( `${config.seasonPrefix}\\d+` );
+const projectExtension = path.extname( config.defaultTemplate );
 
 function getSeasonDirectories() {
   return attempt(
     () => {
       const cwd = fs.readdirSync( '.' );
-      let seasons = [];
+      const seasons = [];
       cwd.forEach( ( item ) => {
         if ( seasonPattern.test( item ) ) {
           seasons.push( item );
@@ -71,48 +77,43 @@ function getSeasonDirectories() {
       } );
       return seasons;
     },
-    'File system error'
+    'File system error',
   );
 }
 
 function makeSeasonDirectory( seasonNumber ) {
   return attempt(
     () => fs.mkdirSync( `${config.seasonPrefix}${seasonNumber.toString()}`, {
-      "recursive": true
+      "recursive": true,
     } ),
-    'File system error'
+    'File system error',
   );
 }
 
 function getDayOfWeek( dateObject, type = 'short' ) {
   return (
     new Intl.DateTimeFormat( 'en-US', {
-      "weekday": type
+      "weekday": type,
     } ).format( dateObject )
   );
 }
 
-function getSimpleISOString( dateObject ) {
-  return dateObject.toISOString().split( 'T' )[0];
-}
+// function getSimpleISOString( dateObject ) {
+//   return dateObject.toISOString().split( 'T' )[0];
+// }
 
-function makeEpisodeDirectory( seasonDirectory, dateObject, title = '' ) {
-  const dayOfWeek = getDayOfWeek( dateObject );
-  const date = getSimpleISOString( dateObject );
-  const path = `${seasonDirectory}/${date} - ${dayOfWeek} - ${title}`;
+function makeEpisodeDirectory() {
+  if ( !episodeDirectory ) {
+    throw new Error( `\`episodeDirectory\` can not be falsy (type: ${typeof episodeDirectory})` );
+  }
 
-  attempt(
-    () => fs.mkdirSync( path, {
-      "recursive": true
+  return attempt(
+    () => fs.mkdirSync( episodeDirectory, {
+      "recursive": true,
     } ),
-    'File system error'
+    'File system error',
   );
-
-  return path;
 }
-
-const config = getConfig();
-const seasonPattern = new RegExp( `${config.seasonPrefix}\\d+` );
 
 if ( process.argv.length === 2 ) {
   error( 'Expected at least one argument.\n', true );
@@ -140,13 +141,15 @@ if ( dateIndex === -1 ) {
   error( 'Missing required date argument ( -d | --date )' );
 }
 
-const date = process.argv[++dateIndex] + 'T12:00:00Z';
+const simpleISOString = process.argv[++dateIndex];
+const date = `${simpleISOString}T12:00:00Z`;
 const dateObject = new Date( date );
 try {
   dateObject.toISOString();
 } catch ( err ) {
   error( `Error for argument ${dateFlag}: ${err.message}` );
 }
+const dayOfWeek = getDayOfWeek( dateObject );
 
 let titleIndex = process.argv.indexOf( '-t' );
 if ( titleIndex === -1 ) {
@@ -173,9 +176,8 @@ let targetSeason;
 let targetEpisode;
 
 if ( seasonIndex === -1 ) {
-  let seasons = getSeasonDirectories();
+  const seasons = getSeasonDirectories();
   let latestSeason;
-  let seasonPieces;
 
   if ( !seasons.length ) {
     makeSeasonDirectory( 1 );
@@ -184,7 +186,7 @@ if ( seasonIndex === -1 ) {
     latestSeason = seasons[seasons.length - 1];
   }
 
-  seasonPieces = latestSeason.split( ' ' );
+  const seasonPieces = latestSeason.split( ' ' );
   latestSeason = parseInt( seasonPieces[seasonPieces.length - 1], 10 );
   targetSeason = latestSeason;
 } else {
@@ -198,24 +200,21 @@ if ( episodeIndex === -1 ) {
   targetEpisode = process.argv[++episodeIndex];
 }
 
-let targetSeasonDirectory = `${config.seasonPrefix}${targetSeason}`;
-let targetEpisodeDirectory = makeEpisodeDirectory( targetSeasonDirectory, dateObject, title );
+const seasonDirectory = `${config.seasonPrefix}${targetSeason}`;
+episodeDirectory = `${seasonDirectory}/${simpleISOString} - ${dayOfWeek} - ${title}`;
 
-copy( `${config.templateDirectory}_skeleton/`, targetEpisodeDirectory )
-  .then( ( results ) => {
-    // console.info( 'Copied ' + results.length + ' files' );
-    // return copy(
-    //   `${config.templateDirectory}description.md`,
-    //   `${targetEpisodeDirectory}/${config.descriptionTargetDirectory}/description.md`
-    // );
-    let description = attempt(
-      () => fs.readFileSync( `${config.templateDirectory}description.md`, 'utf8' ),
-      'File system error'
-    );
+makeEpisodeDirectory();
 
+copy( `${config.templateDirectory}_skeleton/`, episodeDirectory )
+  .then( () => {
     function templateVar( name ) {
       return new RegExp( `\\[${name}\\]`, 'g' );
     }
+
+    let description = attempt(
+      () => fs.readFileSync( `${config.templateDirectory}description.md`, 'utf8' ),
+      'File system error',
+    );
 
     description = description
       .replace( templateVar( 'episodeTitle' ), title )
@@ -226,23 +225,29 @@ copy( `${config.templateDirectory}_skeleton/`, targetEpisodeDirectory )
       .replace( templateVar( 'seasonId' ), `S${pad( targetSeason )}` )
       .replace( templateVar( 'episodeId' ), `E${pad( targetEpisode )}` )
       // .replace( templateVar( 'episodeNumber' ), '' )
-      .replace( templateVar( 'date' ), getSimpleISOString( dateObject ) )
-      .replace( templateVar( 'dayOfWeek' ), getDayOfWeek( dateObject ) )
-    ;
+      .replace( templateVar( 'date' ), simpleISOString )
+      .replace( templateVar( 'dayOfWeek' ), dayOfWeek );
 
-    let wrote = attempt(
+    const wrote = attempt(
       () => fs.writeFileSync(
-        `${targetEpisodeDirectory}/${config.descriptionTargetDirectory}/description.md`,
+        `${episodeDirectory}/${config.descriptionTargetDirectory}/description.md`,
         description,
-        'utf8'
+        'utf8',
       ),
-      'File system error'
+      'File system error',
     );
 
-    console.log( wrote );
+    return wrote;
   } )
-  .then( ( results ) => {
+  .then( () => {
+    const templateFile = `${config.templateDirectory}${config.defaultTemplate}`;
+    const newProject = `${episodeDirectory}/${config.videoEditingTargetDirectory}${simpleISOString}${projectExtension}`;
 
+    return (
+      copy( templateFile, newProject )
+        .then( () => console.info( `✨  ${newProject}` ) )
+        .catch( err => error( `File system error: ${err.message}` ) )
+    );
   } )
   .catch( ( err ) => {
     error( err.message );
