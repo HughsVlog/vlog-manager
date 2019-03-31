@@ -101,9 +101,11 @@ function getDayOfWeek( dateObject, type = 'short' ) {
   );
 }
 
-// function getSimpleISOString( dateObject ) {
-//   return dateObject.toISOString().split( 'T' )[0];
-// }
+function getSimpleISOString( date ) {
+  // https://stackoverflow.com/a/37661393
+  const localizedISOString = ( new Date( date.getTime() - ( date.getTimezoneOffset() * 60000 ) ).toISOString() ); // .slice(0,-1)
+  return localizedISOString.split( 'T' )[0];
+}
 
 function makeEpisodeDirectory() {
   if ( !episodeDirectory ) {
@@ -144,13 +146,31 @@ if ( dateIndex === -1 ) {
   error( 'Missing required date argument ( -d | --date )' );
 }
 
-const simpleISOString = process.argv[++dateIndex];
-const date = `${simpleISOString}T12:00:00Z`;
-const dateObject = new Date( date );
-try {
-  dateObject.toISOString();
-} catch ( err ) {
-  error( `Error for argument ${dateFlag}: ${err.message}` );
+const dateArgumentValue = process.argv[++dateIndex]; // 2019-01-01 | today | yesterday
+let simpleISOString; // 2019-01-01
+let dateObject;
+
+switch ( dateArgumentValue ) {
+  case 'today':
+    dateObject = new Date();
+    simpleISOString = getSimpleISOString( dateObject );
+    break;
+
+  case 'yesterday':
+    dateObject = new Date();
+    dateObject.setDate( dateObject.getDate() - 1 );
+    simpleISOString = getSimpleISOString( dateObject );
+    break;
+
+  default:
+    dateObject = new Date( `${dateArgumentValue}T12:00:00Z` );
+    // Cheap validation:
+    try {
+      dateObject.toISOString();
+    } catch ( err ) {
+      error( `Error for argument ${dateFlag}: ${err.message}` );
+    }
+    simpleISOString = dateArgumentValue;
 }
 const dayOfWeek = getDayOfWeek( dateObject );
 
