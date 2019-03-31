@@ -6,11 +6,16 @@ Easily generate project files for daily vlogs.
 
 Create a file `vlog-manager.json` at the root of the directory. This file holds various template variables and paths.
 
+<!--
+  Future:
+  - defaultTemplateMainSequenceName
+-->
 ```json
 {
   "title": "Hugh’s Vlog",
   "author": {
     "name": "Hugh Guiney",
+    "facebook": "https://www.facebook.com/HughsVlog/",
     "twitter": "https://twitter.com/LordPancreas",
     "instagram": "https://www.instagram.com/lordpancreas/",
     "snapchat": "https://www.snapchat.com/add/hguiney"
