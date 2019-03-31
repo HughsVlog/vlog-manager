@@ -1,6 +1,9 @@
 const fs = require( 'fs' );
 const copy = require( 'recursive-copy' );
 const path = require( 'path' );
+const decompress = require( 'decompress' );
+const decompressGz = require( 'decompress-gz' );
+const zlib = require( 'zlib' );
 
 const help = `Vlog Manager v0.0.0
   by Hugh Guiney
@@ -9,15 +12,15 @@ Example usage:
   node new-episode.js -d 2019-01-01 [-t 'Getting A Lip Tattoo'] [-s 3]
 
 Arguments:
-  -h | --help\tDisplay this Help screen. Disables other arguments.
-  -d | --date\tDate of recording (required).
-             \tValues:
-             \t  - ISO 8601 date without a time component, e.g. 2019-01-01
-             \t  - A relative day keyword: 'today' or 'yesterday'
-  -t | --title\tTitle
-  -s | --season\tSeason number. Corresponds to target directory.
-               \tDefaults to latest 'Season X' directory.
-  -e | --episode\tEpisode number. For use in description.md.
+  -h | --help     Display this Help screen. Disables other arguments.
+  -d | --date     Date of recording (required).
+                  Values:
+                    - ISO 8601 date without a time component, e.g. 2019-01-01
+                    - A relative day keyword: 'today' or 'yesterday'
+  -t | --title    Title
+  -s | --season   Season number. Corresponds to target directory.
+                  Defaults to latest 'Season X' directory.
+  -e | --episode  Episode number. For use in description.md.
 `;
 
 let episodeDirectory;
@@ -205,18 +208,18 @@ episodeDirectory = `${seasonDirectory}/${simpleISOString} - ${dayOfWeek} - ${tit
 
 makeEpisodeDirectory();
 
-copy( `${config.templateDirectory}_skeleton/`, episodeDirectory )
-  .then( () => {
-    function templateVar( name ) {
-      return new RegExp( `\\[${name}\\]`, 'g' );
-    }
+const templateVars = {};
 
-    let description = attempt(
-      () => fs.readFileSync( `${config.templateDirectory}description.md`, 'utf8' ),
-      'File system error',
-    );
+function templateVar( name ) {
+  if ( !Object.prototype.hasOwnProperty.call( templateVars, name ) ) {
+    templateVars[name] = new RegExp( `\\[${name}\\]`, 'g' );
+  }
+  return templateVars[name];
+}
 
-    description = description
+function replaceVars( text ) {
+  return (
+    text
       .replace( templateVar( 'episodeTitle' ), title )
       .replace( templateVar( 'vlogTitle' ), config.title )
       .replace( templateVar( 'twitter' ), config.author.twitter )
@@ -226,7 +229,18 @@ copy( `${config.templateDirectory}_skeleton/`, episodeDirectory )
       .replace( templateVar( 'episodeId' ), `E${pad( targetEpisode )}` )
       // .replace( templateVar( 'episodeNumber' ), '' )
       .replace( templateVar( 'date' ), simpleISOString )
-      .replace( templateVar( 'dayOfWeek' ), dayOfWeek );
+      .replace( templateVar( 'dayOfWeek' ), dayOfWeek )
+  );
+}
+
+copy( `${config.templateDirectory}_skeleton/`, episodeDirectory )
+  .then( () => {
+    let description = attempt(
+      () => fs.readFileSync( `${config.templateDirectory}description.md`, 'utf8' ),
+      'File system error',
+    );
+
+    description = replaceVars( description );
 
     const wrote = attempt(
       () => fs.writeFileSync(
@@ -243,12 +257,25 @@ copy( `${config.templateDirectory}_skeleton/`, episodeDirectory )
     const templateFile = `${config.templateDirectory}${config.defaultTemplate}`;
     const newProject = `${episodeDirectory}/${config.videoEditingTargetDirectory}${simpleISOString}${projectExtension}`;
 
-    return (
-      copy( templateFile, newProject )
-        .then( () => console.info( `✨  ${newProject}` ) )
-        .catch( err => error( `File system error: ${err.message}` ) )
-    );
+    return decompress( templateFile, `${config.templateDirectory}/extracted/`, {
+      "inputFile": templateFile,
+      "plugins": [
+        decompressGz(),
+      ],
+    } ).then( ( files ) => {
+      if ( files.length ) {
+        let premiereXml = files[0].data.toString();
+        premiereXml = replaceVars( premiereXml );
+        attempt(
+          () => fs.writeFileSync( newProject, zlib.gzipSync( premiereXml ), 'utf8' ),
+          'File system error',
+        );
+        return newProject;
+      }
+      throw new Error( `Unable to decompress ${templateFile} using Gzip` );
+    } );
   } )
+  .then( newProject => console.info( `✨  ${newProject}` ) )
   .catch( ( err ) => {
     error( err.message );
   } );

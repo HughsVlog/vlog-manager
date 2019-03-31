@@ -8,6 +8,9 @@
   "private": true,
   "repository": "https://github.com/HughsVlog/vlog-manager.git",
   "dependencies": {
+    "decompress": "^4.2.0",
+    "decompress-gz": "^0.0.1",
+    "decompress-unzip": "^4.0.1",
     "recursive-copy": "^2.0.10"
   },
   "devDependencies": {
