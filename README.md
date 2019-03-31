@@ -108,18 +108,23 @@ The file `Templates/description.md` will be copied to `Export/description.md`, a
     <td></td>
   </tr>
   <tr>
-    <td><code>author</code></td>
-    <td></td>
-    <td>Information about the primary author of the vlog.</td>
-    <td>    
-      <ul>
-        <li><code>name</code> (Text)</li>
-        <li><code>twitter</code> (URL)</li>
-        <li><code>instagram</code> (URL)</li>
-        <li><code>snapchat</code> (URL)</li>
-      </ul>
-    </td>
-    <td></td>
+    <td rowspan="5"><code>author</code></td>
+    <td rowspan="5"></td>
+    <td rowspan="5">Information about the primary author of the vlog.</td>
+    <td><code>name</code> (Text)</td>
+    <td rowspan="5"></td>
+  </tr>
+  <tr>
+    <td><code>facebook</code> (URL)</td>
+  </tr>
+  <tr>
+    <td><code>twitter</code> (URL)</td>
+  </tr>
+  <tr>
+    <td><code>instagram</code> (URL)</td>
+  </tr>
+  <tr>
+    <td><code>snapchat</code> (URL)</td>
   </tr>
   <tr>
     <td><code>templateDirectory</code></td>
